@@ -18,9 +18,9 @@ var tests = []Test{
 	{part: 2, file: "input.txt", target: 2587},
 }
 
-func TestAOC(t *testing.T) {
+func Test_03(t *testing.T) {
 	for _, tc := range tests {
-		t.Run(fmt.Sprintf("Testing part %d with %s", tc.part, tc.file), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Part %d %s", tc.part, tc.file), func(t *testing.T) {
 			var result int
 			if tc.part == 1 {
 				result = SolveOne(tc.file)

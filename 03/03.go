@@ -1,4 +1,4 @@
-package day03
+package main
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ func main() {
 	fmt.Printf("PART TWO :  %d\n", SolveTwo("input.txt"))
 }
 
-func SolveOne(file string) string {
+func SolveOne(file string) int {
 	lines := strings.Split(tools.ReadFile(file), "\n")
 	items := make(map[rune]int)
 	for _, line := range lines {
