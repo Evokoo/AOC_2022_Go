@@ -17,28 +17,23 @@ type Game struct {
 }
 
 func Solve(file string, part int) int {
+	lines := strings.Split(tools.ReadFile(file), "\n")
 	score := 0
-	for _, game := range parseInput(file) {
+
+	for _, line := range lines {
+		game := Game{P1: line[0], P2: line[2]}
+
 		switch part {
 		case 1:
-			score += playGameOne(game)
+			score += game.playGameOne()
 		case 2:
-			score += playGameTwo(game)
+			score += game.playGameTwo()
 		}
 	}
 	return score
 }
 
-func parseInput(file string) []Game {
-	data := strings.Split(tools.ReadFile(file), "\n")
-	games := make([]Game, len(data))
-
-	for i, game := range data {
-		games[i] = Game{P1: game[0], P2: game[2]}
-	}
-	return games
-}
-func playGameOne(game Game) int {
+func (game *Game) playGameOne() int {
 	score := 0
 	switch game.P2 {
 	case 'X':
@@ -61,7 +56,7 @@ func playGameOne(game Game) int {
 	}
 	return score
 }
-func playGameTwo(game Game) int {
+func (game *Game) playGameTwo() int {
 	score := 0
 	switch game.P2 {
 	case 'X':
