@@ -1,6 +1,9 @@
 package tools
 
-import "os"
+import (
+	"os"
+	"regexp"
+)
 
 func ReadFile(title string) string {
 	data, err := os.ReadFile(title)
@@ -8,4 +11,9 @@ func ReadFile(title string) string {
 		panic("Error reading file")
 	}
 	return string(data)
+}
+
+func QuickMatch(str, pattern string) []string {
+	re := regexp.MustCompile(pattern)
+	return re.FindAllString(str, -1)
 }
