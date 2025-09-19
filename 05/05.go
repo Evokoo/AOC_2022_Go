@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/Evokoo/AOC_2022_Go/tools"
+	"github.com/Evokoo/AOC_2022_Go/tools/ds"
 )
 
 type Move struct {
@@ -35,8 +36,8 @@ func Solve(file string, part int) string {
 	return result.String()
 }
 
-func parseInput(data string) ([]Stack[string], []Move) {
-	var stacks []Stack[string]
+func parseInput(data string) ([]ds.Stack[string], []Move) {
+	var stacks []ds.Stack[string]
 	var moves []Move
 
 	for i, section := range strings.Split(data, "\n\n") {
@@ -44,7 +45,7 @@ func parseInput(data string) ([]Stack[string], []Move) {
 
 		if i == 0 {
 			for x := 1; x < len(lines[0]); x = x + 4 {
-				var stack Stack[string]
+				var stack ds.Stack[string]
 				for y := 0; y < len(lines)-1; y++ {
 					if lines[y][x] != ' ' {
 						stack = append(stack, string(lines[y][x]))
