@@ -14,26 +14,6 @@ type Move struct {
 	To     int
 }
 
-func moveItems(from *ds.Stack[string], amount int, to *ds.Stack[string], preserveOrder bool) {
-	var items []string
-
-	for range amount {
-		item, err := (*from).Pop()
-		if err == nil {
-			items = append(items, item)
-
-		}
-	}
-	if preserveOrder {
-		for i, j := 0, len(items)-1; i < j; i, j = i+1, j-1 {
-			items[i], items[j] = items[j], items[i]
-		}
-	}
-	for _, item := range items {
-		to.Push(item)
-	}
-}
-
 func Solve(file string, part int) string {
 	data := tools.ReadFile(file)
 	stacks, moves := parseInput(data)
@@ -93,4 +73,24 @@ func parseInput(data string) ([]ds.Stack[string], []Move) {
 		}
 	}
 	return stacks, moves
+}
+
+func moveItems(from *ds.Stack[string], amount int, to *ds.Stack[string], preserveOrder bool) {
+	var items []string
+
+	for range amount {
+		item, err := (*from).Pop()
+		if err == nil {
+			items = append(items, item)
+
+		}
+	}
+	if preserveOrder {
+		for i, j := 0, len(items)-1; i < j; i, j = i+1, j-1 {
+			items[i], items[j] = items[j], items[i]
+		}
+	}
+	for _, item := range items {
+		to.Push(item)
+	}
 }
