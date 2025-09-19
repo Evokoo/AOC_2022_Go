@@ -7,26 +7,6 @@ type Stack[T any] []T
 // Errors
 var ErrEmptyStack = errors.New("stack is empty")
 
-func (s *Stack[T]) Move(amount int, to *Stack[T], preserveOrder bool) {
-	var items []T
-
-	for range amount {
-		item, err := (*s).Pop()
-		if err == nil {
-			items = append(items, item)
-
-		}
-	}
-	if preserveOrder {
-		for i, j := 0, len(items)-1; i < j; i, j = i+1, j-1 {
-			items[i], items[j] = items[j], items[i]
-		}
-	}
-	for _, item := range items {
-		to.Push(item)
-	}
-}
-
 func (s *Stack[T]) Pop() (T, error) {
 	if len(*s) == 0 {
 		var blank T
