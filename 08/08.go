@@ -16,7 +16,6 @@ func Solve(file string, part int) int {
 	if part == 2 {
 		return viewScore
 	}
-
 	return visible
 }
 
