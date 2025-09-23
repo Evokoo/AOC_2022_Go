@@ -9,15 +9,8 @@ import (
 )
 
 type Operation [3]string
-type Item int
 
-type Monkey struct {
-	items       []Item
-	operation   Operation
-	test        int
-	desination  [2]int
-	inspections int
-}
+type Item int
 
 func (i Item) get() int {
 	return int(i)
@@ -25,6 +18,16 @@ func (i Item) get() int {
 func (i *Item) set(n int) {
 	*i = Item(n)
 }
+
+type Monkey struct {
+	items       []Item
+	operation   Operation
+	test        int
+	desination  [2]int
+	inspections int
+	lcm         int
+}
+
 func (m *Monkey) push(item Item) {
 	(*m).items = append((*m).items, item)
 }
@@ -38,9 +41,10 @@ func (m *Monkey) hasItems() bool {
 }
 
 // Inspect and update item and determine destination
-func (m *Monkey) inspect(item *Item) int {
-	var a, b int
+func (m *Monkey) inspect(item *Item, part int) int {
 	m.inspections++
+
+	var a, b int
 
 	if m.operation[0] == "old" {
 		a = item.get()
@@ -57,9 +61,17 @@ func (m *Monkey) inspect(item *Item) int {
 
 	switch m.operation[1] {
 	case "+":
-		(*item).set((a + b) / 3)
+		if part == 2 {
+			(*item).set((a + b) % m.lcm)
+		} else {
+			(*item).set((a + b) / 3)
+		}
 	case "*":
-		(*item).set((a * b) / 3)
+		if part == 2 {
+			(*item).set((a * b) % m.lcm)
+		} else {
+			(*item).set((a * b) / 3)
+		}
 	}
 
 	if (*item).get()%m.test == 0 {
@@ -81,7 +93,7 @@ func Solve(file string, part int) int {
 		for i := range monkeys {
 			for monkeys[i].hasItems() {
 				item := monkeys[i].pop()
-				index := monkeys[i].inspect(&item)
+				index := monkeys[i].inspect(&item, part)
 				monkeys[index].push(item)
 			}
 		}
@@ -93,10 +105,10 @@ func Solve(file string, part int) int {
 
 	return monkeys[0].inspections * monkeys[1].inspections
 }
-
 func parseInput(file string) []Monkey {
 	var output []Monkey
 	data := tools.ReadFile(file)
+	lcm := 1
 
 	for section := range strings.SplitSeq(data, "\n\n") {
 		var monkey Monkey
@@ -115,6 +127,7 @@ func parseInput(file string) []Monkey {
 				d := tools.QuickMatch(line, `\d+`)
 				n, _ := strconv.Atoi(d[0])
 				monkey.test = n
+				lcm *= n
 			case 4, 5:
 				d := tools.QuickMatch(line, `\d+`)
 				n, _ := strconv.Atoi(d[0])
@@ -128,5 +141,10 @@ func parseInput(file string) []Monkey {
 		}
 		output = append(output, monkey)
 	}
+
+	for i := range output {
+		output[i].lcm = lcm
+	}
+
 	return output
 }
