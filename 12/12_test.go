@@ -18,7 +18,7 @@ var tests = []Test{
 	{part: 1, file: "example.txt", target: 31},
 	{part: 1, file: "input.txt", target: 468},
 	{part: 2, file: "example.txt", target: 29},
-	// {part: 2, file: "input.txt", target: -1},
+	{part: 2, file: "input.txt", target: 459},
 }
 
 var _ = Describe("AOC 2022 - Day 12", func() {
