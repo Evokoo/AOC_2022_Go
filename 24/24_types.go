@@ -21,8 +21,8 @@ type Point struct{ x, y int }
 // ========================
 // GRID
 // ========================
-type Schedule = map[Point]ds.Set[int]
-type ScheduleSet = ds.Set[int]
+type TimeSet = ds.Set[int]
+type Schedule = map[Point]TimeSet
 
 type Grid struct {
 	schedule Schedule
