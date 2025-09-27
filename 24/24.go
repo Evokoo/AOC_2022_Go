@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/Evokoo/AOC_2022_Go/tools"
-	"github.com/Evokoo/AOC_2022_Go/tools/ds"
 )
 
 func Solve(file string, part int) int {
@@ -41,14 +40,14 @@ func parseInput(file string) Grid {
 	}
 
 	grid.lcm = tools.LCM(grid.width, grid.height)
-	grid.schedule[grid.entry] = ds.NewSet[int]()
-	grid.schedule[grid.exit] = ds.NewSet[int]()
+	grid.schedule[grid.entry] = make(TimeSet)
+	grid.schedule[grid.exit] = make(TimeSet)
 
 	for y := 1; y < grid.height+1; y++ {
 		for x := 1; x < grid.width+1; x++ {
 			coord := Point{x, y}
 			if _, found := grid.schedule[coord]; !found {
-				grid.schedule[coord] = ds.NewSet[int]()
+				grid.schedule[coord] = make(TimeSet)
 			}
 			grid.MapStormPath(coord, rows[y][x])
 		}
