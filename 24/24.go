@@ -8,11 +8,26 @@ import (
 	"github.com/Evokoo/AOC_2022_Go/tools/ds"
 )
 
-func Solve(file string) int {
+func Solve(file string, part int) int {
 	grid := parseInput(file)
-	time := navigateGrid(grid)
+	time := 0
+	rounds := 1
 
-	fmt.Printf("TIME for %s is %d\n", file, time)
+	if part == 2 {
+		rounds = 3
+	}
+
+	for round := 0; round < rounds; round++ {
+		start := grid.entry
+		goal := grid.exit
+		if round%2 == 1 { // odd rounds: go back
+			start, goal = goal, start
+		}
+		legTime := navigateGrid(Grid{grid.schedule, start, goal, grid.lcm}, time)
+		time = legTime
+	}
+
+	// fmt.Printf("TIME for %s is %d\n", file, time)
 
 	return time
 }
@@ -59,8 +74,6 @@ func parseInput(file string) Grid {
 	grid.schedule[grid.entry] = ds.Set[int]{}
 	grid.schedule[grid.exit] = ds.Set[int]{}
 
-	fmt.Printf("Width=%d Height=%d LCM=%d\n", width, height, grid.lcm)
-
 	return grid
 }
 func traceStormPath(storm, direction Point, width, height int, schedule *map[Point]ds.Set[int], lcm int) {
@@ -100,8 +113,8 @@ type State struct {
 	time     int
 }
 
-func navigateGrid(grid Grid) int {
-	queue := NewQueueWith(State{grid.entry, 0})
+func navigateGrid(grid Grid, startTime int) int {
+	queue := NewQueueWith(State{grid.entry, startTime})
 	seen := make(map[State]bool)
 
 	directions := []Point{
