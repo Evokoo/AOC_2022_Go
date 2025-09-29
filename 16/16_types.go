@@ -6,18 +6,16 @@ package day16
 type ValveMap map[string]*Valve
 type Valve struct {
 	index    int
-	id       string
 	rate     int
 	paths    []string
-	isOpen   bool
 	distance map[string]int
 }
 
-func NewValve(index int, id string, rate int, paths []string, open bool) *Valve {
-	return &Valve{index, id, rate, paths, open, make(map[string]int)}
+func NewValve(index int, rate int, paths []string) *Valve {
+	return &Valve{index, rate, paths, make(map[string]int)}
 }
 
-func (v *Valve) UpdateDistanceMap(distanceMap DistanceMap) {
+func (v *Valve) UpdateDistanceMap(distanceMap map[string]int) {
 	v.distance = distanceMap
 }
 
@@ -32,9 +30,25 @@ func (v ValveMap) RemoveZeroFlowValves() ValveMap {
 }
 
 // ========================
+// STATE
+// ========================
+type State struct {
+	id       string
+	time     int
+	pressure int
+	openMask uint64
+}
+
+func (s State) UpdateState(id string, valve *Valve) State {
+	mask := s.openMask | (1 << (*valve).index)
+	time := s.time - ((*valve).distance[s.id] + 1)
+	pressure := s.pressure + (time * (*valve).rate)
+	return State{id, time, pressure, mask}
+}
+
+// ========================
 // DISTANCE
 // ========================
-type DistanceMap = map[string]int
 type DistanceState struct {
 	location string
 	distance int

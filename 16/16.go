@@ -20,44 +20,35 @@ func parseInput(file string) ValveMap {
 	for i, line := range strings.Split(data, "\n") {
 		details := tools.QuickMatch(line, `[A-Z]{2}|\d+`)
 		rate, _ := strconv.Atoi(details[1])
-		valves[details[0]] = NewValve(i, details[0], rate, details[2:], false)
+		valves[details[0]] = NewValve(i, rate, details[2:])
 	}
 
 	mapDistance(&valves)
-	return valves
+	return valves.RemoveZeroFlowValves()
 }
 func mapDistance(valves *ValveMap) {
-
 	for id := range *valves {
+		(*valves)[id].distance = make(map[string]int)
 		queue := NewQueue(DistanceState{id, 0})
-		dists := make(map[string]int)
+
 		for !queue.IsEmpty() {
 			current := queue.Pop()
-			if _, found := dists[current.location]; found {
+			if _, found := (*valves)[id].distance[current.location]; found {
 				continue
 			} else {
-				dists[current.location] = current.distance
+				(*valves)[id].distance[current.location] = current.distance
 			}
 			for _, path := range (*valves)[current.location].paths {
-				if _, found := dists[path]; !found {
+				if _, found := (*valves)[id].distance[path]; !found {
 					queue.Push(DistanceState{path, current.distance + 1})
 				}
 
 			}
 		}
-		(*valves)[id].UpdateDistanceMap(dists)
 	}
 }
 
-type State struct {
-	id       string
-	time     int
-	pressure int
-	openMask uint64
-}
-
 func traverseValves(valves ValveMap, time int) int {
-	valveList := valves.RemoveZeroFlowValves()
 	queue := NewQueue(State{"AA", time, 0, 0})
 	bestSeen := make(map[[2]uint64]int)
 	best := 0
@@ -69,31 +60,21 @@ func traverseValves(valves ValveMap, time int) int {
 			best = current.pressure
 		}
 
-		for id, valve := range valveList {
+		for id, valve := range valves {
 			if current.openMask&(1<<valve.index) != 0 {
 				continue
 			}
 
-			newMask := current.openMask | (1 << valve.index)
-			distTo := valve.distance[current.id]
-			newTime := current.time - (distTo + 1)
-			newPressure := current.pressure + (newTime * valve.rate)
+			newState := current.UpdateState(id, valve)
+			key := [2]uint64{uint64(valve.index), newState.openMask}
 
-			if newTime < 0 {
+			if newState.time < 0 || bestSeen[key] >= newState.pressure {
 				continue
 			}
 
-			// --- pruning: skip worse duplicate states ---
-			key := [2]uint64{uint64(valve.index), newMask}
-			if bestSeen[key] >= newPressure {
-				continue
-			}
-			bestSeen[key] = newPressure
-			// -------------------------------------------
-
-			queue.Push(State{id, newTime, newPressure, newMask})
+			bestSeen[key] = newState.pressure
+			queue.Push(newState)
 		}
 	}
-
 	return best
 }
