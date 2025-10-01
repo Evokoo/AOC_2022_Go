@@ -1,6 +1,7 @@
 package day19
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
@@ -10,18 +11,26 @@ import (
 // ========================
 // CONSTANTS
 // ========================
+const (
+	ORE     = "ore"
+	CLAY    = "clay"
+	OBSIDAN = "obsidian"
+	GEODE   = "geode"
+)
+
+var RobotTypes = []string{ORE, CLAY, OBSIDAN, GEODE}
 
 // ========================
-// SUPPLY LIST
+// Recipe
 // ========================
-type SupplyList struct {
+type Recipe struct {
 	ore      int
 	clay     int
 	obsidian int
 }
 
-func NewSupplyList(ore, clay, obsidian int) SupplyList {
-	return SupplyList{ore, clay, obsidian}
+func NewRecipe(ore, clay, obsidian int) Recipe {
+	return Recipe{ore, clay, obsidian}
 }
 
 // ========================
@@ -29,19 +38,19 @@ func NewSupplyList(ore, clay, obsidian int) SupplyList {
 // ========================
 type Blueprint struct {
 	id       int
-	ore      SupplyList
-	clay     SupplyList
-	obsidian SupplyList
-	geode    SupplyList
+	ore      Recipe
+	clay     Recipe
+	obsidian Recipe
+	geode    Recipe
 }
 
 func NewBlueprint(values []int) Blueprint {
 	return Blueprint{
 		id:       values[0],
-		ore:      NewSupplyList(values[1], 0, 0),
-		clay:     NewSupplyList(values[2], 0, 0),
-		obsidian: NewSupplyList(values[3], values[4], 0),
-		geode:    NewSupplyList(values[5], 0, values[6]),
+		ore:      NewRecipe(values[1], 0, 0),
+		clay:     NewRecipe(values[2], 0, 0),
+		obsidian: NewRecipe(values[3], values[4], 0),
+		geode:    NewRecipe(values[5], 0, values[6]),
 	}
 }
 
@@ -61,10 +70,67 @@ func ParseBlueprints(file string) (blueprints []Blueprint) {
 	return
 }
 
+func (b Blueprint) GetRecipe(robot string) Recipe {
+	switch robot {
+	case ORE:
+		return b.ore
+	case CLAY:
+		return b.clay
+	case OBSIDAN:
+		return b.obsidian
+	case GEODE:
+		return b.geode
+	default:
+		panic("Invalid robot type")
+	}
+}
+
 // ========================
 // ROBOTS
 // ========================
 type Robots map[string]int
+
+func NewRobotMap() Robots {
+	robots := make(map[string]int, 4)
+	robots[ORE]++
+	return robots
+}
+
+func (r Robots) Clone() Robots {
+	clone := make(Robots, len(r))
+	for robot, count := range r {
+		clone[robot] = count
+	}
+	return clone
+}
+
+func (r *Robots) Build(robot string, m *Materials, blueprint Blueprint) (string, error) {
+	recipe := blueprint.GetRecipe(robot)
+	if m.CanBuild(recipe) {
+		m.UseMaterials(recipe)
+		return robot, nil
+	}
+	return "", errors.New("insufficient materials")
+}
+
+func (r *Robots) Deploy(robot string) {
+	(*r)[robot]++
+}
+
+func (r Robots) Collect(m *Materials) {
+	for robot, count := range r {
+		switch robot {
+		case ORE:
+			m.ore += count
+		case CLAY:
+			m.clay += count
+		case OBSIDAN:
+			m.obsidian += count
+		case GEODE:
+			m.geode += count
+		}
+	}
+}
 
 // ========================
 // MATERIALS
@@ -76,17 +142,50 @@ type Materials struct {
 	geode    int
 }
 
-func (m *Materials) UpdateMaterials(robots Robots) {
-	for robot, count := range robots {
-		switch robot {
-		case "ore":
-			m.ore += count
-		case "clay":
-			m.clay += count
-		case "obsidian":
-			m.obsidian += count
-		case "geode":
-			m.geode += count
-		}
+func NewMaterialList() Materials {
+	return Materials{}
+}
+
+func (m Materials) CanBuild(recipe Recipe) bool {
+	if m.ore >= recipe.ore &&
+		m.clay >= recipe.clay &&
+		m.obsidian >= recipe.obsidian {
+		return true
 	}
+	return false
+}
+
+func (m *Materials) UseMaterials(recipe Recipe) {
+	(*m).ore -= recipe.ore
+	(*m).clay -= recipe.clay
+	(*m).obsidian -= recipe.obsidian
+}
+
+// ========================
+// SIMULATION
+// ========================
+type State struct {
+	time      int
+	robots    Robots
+	materials Materials
+}
+
+// ========================
+// QUEUE
+// ========================
+type Queue[T any] []T
+
+func NewQueue[T any](item T) Queue[T] {
+	return Queue[T]{item}
+}
+func (q *Queue[T]) Pop() T {
+	removed := (*q)[0]
+	(*q) = (*q)[1:]
+	return removed
+}
+func (q *Queue[T]) Push(c T) {
+	*q = append(*q, c)
+}
+func (q Queue[T]) IsEmpty() bool {
+	return len(q) == 0
 }
