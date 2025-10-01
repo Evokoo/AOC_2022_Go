@@ -11,38 +11,43 @@ func Solve(file string) int {
 }
 
 func simulate(blueprint Blueprint, time int) {
-	queue := NewQueue(State{time, NewRobotMap(), NewMaterialList()})
-	geodeCount := 0
+	queue := NewQueue(NewState(time))
+	target := blueprint.MaxResourceCap()
+	geodes := 0
 
 	for !queue.IsEmpty() {
 		current := queue.Pop()
 
 		if current.time == 0 {
-			if current.materials.geode > geodeCount {
-				geodeCount = current.materials.geode
+			if current.materials[GEODE] > geodes {
+				geodes = current.materials[GEODE]
 			}
 			continue
 		}
 
-		//Attempt to build robots
-		for _, rt := range RobotTypes {
-			robotsCopy := current.robots.Clone()
-			materialCopy := current.materials
-			newRobot, err := robotsCopy.Build(rt, &materialCopy, blueprint)
-			robotsCopy.Collect(&materialCopy)
+		// Attempt to build a robot
+		for _, resource := range [4]Resource{ORE, CLAY, OBSIDAN, GEODE} {
+			if resource == GEODE || current.robots[resource] < target[resource] {
+				next := current.CopyState()
+				bot, err := next.robots.Build(resource, &next.materials, blueprint)
 
-			if err == nil {
-				robotsCopy.Deploy(newRobot)
-				queue.Push(State{current.time - 1, robotsCopy, materialCopy})
+				if err == nil {
+					next.robots.Collect(&next.materials)
+					next.robots.Deploy(bot)
+					next.time--
+					queue.Push(next)
+				}
+
 			}
 		}
-
-		//Don't build any
-		current.robots.Collect(&current.materials)
-		queue.Push(State{current.time - 1, current.robots, current.materials})
+		// Waiting state
+		wait := current.CopyState()
+		wait.robots.Collect(&wait.materials)
+		wait.time--
+		queue.Push(wait)
 	}
 
-	fmt.Println(geodeCount)
+	fmt.Println(geodes)
 
 	panic("")
 }

@@ -11,23 +11,19 @@ import (
 // ========================
 // CONSTANTS
 // ========================
-const (
-	ORE     = "ore"
-	CLAY    = "clay"
-	OBSIDAN = "obsidian"
-	GEODE   = "geode"
-)
+type Resource int
 
-var RobotTypes = []string{ORE, CLAY, OBSIDAN, GEODE}
+const (
+	ORE Resource = iota
+	CLAY
+	OBSIDAN
+	GEODE
+)
 
 // ========================
 // Recipe
 // ========================
-type Recipe struct {
-	ore      int
-	clay     int
-	obsidian int
-}
+type Recipe [3]int
 
 func NewRecipe(ore, clay, obsidian int) Recipe {
 	return Recipe{ore, clay, obsidian}
@@ -37,20 +33,19 @@ func NewRecipe(ore, clay, obsidian int) Recipe {
 // BLUEPRINT
 // ========================
 type Blueprint struct {
-	id       int
-	ore      Recipe
-	clay     Recipe
-	obsidian Recipe
-	geode    Recipe
+	id      int
+	recipes [4]Recipe
 }
 
 func NewBlueprint(values []int) Blueprint {
 	return Blueprint{
-		id:       values[0],
-		ore:      NewRecipe(values[1], 0, 0),
-		clay:     NewRecipe(values[2], 0, 0),
-		obsidian: NewRecipe(values[3], values[4], 0),
-		geode:    NewRecipe(values[5], 0, values[6]),
+		id: values[0],
+		recipes: [4]Recipe{
+			NewRecipe(values[1], 0, 0),
+			NewRecipe(values[2], 0, 0),
+			NewRecipe(values[3], values[4], 0),
+			NewRecipe(values[5], 0, values[6]),
+		},
 	}
 }
 
@@ -70,95 +65,73 @@ func ParseBlueprints(file string) (blueprints []Blueprint) {
 	return
 }
 
-func (b Blueprint) GetRecipe(robot string) Recipe {
-	switch robot {
-	case ORE:
-		return b.ore
-	case CLAY:
-		return b.clay
-	case OBSIDAN:
-		return b.obsidian
-	case GEODE:
-		return b.geode
-	default:
-		panic("Invalid robot type")
+func (b Blueprint) GetRecipe(robot Resource) Recipe {
+	return b.recipes[robot]
+}
+
+func (b Blueprint) MaxResourceCap() Materials {
+	var target Materials
+
+	for _, recipe := range b.recipes {
+		for i, value := range recipe {
+			if target[i] < value {
+				target[i] = value
+			}
+		}
 	}
+	return target
 }
 
 // ========================
 // ROBOTS
 // ========================
-type Robots map[string]int
+type Robots [4]int
 
 func NewRobotMap() Robots {
-	robots := make(map[string]int, 4)
-	robots[ORE]++
-	return robots
+	return Robots{1, 0, 0, 0}
 }
 
-func (r Robots) Clone() Robots {
-	clone := make(Robots, len(r))
-	for robot, count := range r {
-		clone[robot] = count
-	}
-	return clone
-}
-
-func (r *Robots) Build(robot string, m *Materials, blueprint Blueprint) (string, error) {
+func (r *Robots) Build(robot Resource, m *Materials, blueprint Blueprint) (Resource, error) {
 	recipe := blueprint.GetRecipe(robot)
 	if m.CanBuild(recipe) {
 		m.UseMaterials(recipe)
 		return robot, nil
 	}
-	return "", errors.New("insufficient materials")
+	return -1, errors.New("insufficient materials")
 }
 
-func (r *Robots) Deploy(robot string) {
+func (r *Robots) Deploy(robot Resource) {
 	(*r)[robot]++
 }
 
 func (r Robots) Collect(m *Materials) {
-	for robot, count := range r {
-		switch robot {
-		case ORE:
-			m.ore += count
-		case CLAY:
-			m.clay += count
-		case OBSIDAN:
-			m.obsidian += count
-		case GEODE:
-			m.geode += count
-		}
+	for i, count := range r {
+		(*m)[i] += count
 	}
 }
 
 // ========================
 // MATERIALS
 // ========================
-type Materials struct {
-	ore      int
-	clay     int
-	obsidian int
-	geode    int
-}
+type Materials [4]int
 
 func NewMaterialList() Materials {
 	return Materials{}
 }
 
 func (m Materials) CanBuild(recipe Recipe) bool {
-	if m.ore >= recipe.ore &&
-		m.clay >= recipe.clay &&
-		m.obsidian >= recipe.obsidian {
-		return true
+	for i, count := range recipe {
+		if m[i] < count {
+			return false
+		}
 	}
-	return false
+	return true
 }
 
 func (m *Materials) UseMaterials(recipe Recipe) {
-	(*m).ore -= recipe.ore
-	(*m).clay -= recipe.clay
-	(*m).obsidian -= recipe.obsidian
+	for i, amount := range recipe {
+		(*m)[i] -= amount
+	}
 }
 
 // ========================
@@ -168,6 +141,20 @@ type State struct {
 	time      int
 	robots    Robots
 	materials Materials
+}
+
+func NewState(time int) State {
+	return State{
+		time:      time,
+		robots:    NewRobotMap(),
+		materials: NewMaterialList(),
+	}
+}
+
+func (s State) CopyState() State {
+	robots := s.robots
+	materials := s.materials
+	return State{s.time, robots, materials}
 }
 
 // ========================
