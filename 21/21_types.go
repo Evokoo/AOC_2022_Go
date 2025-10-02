@@ -1,7 +1,6 @@
 package day21
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -47,21 +46,33 @@ func (e Equation) Solve(values Values) (int, bool) {
 
 	return 0, false
 }
-func (e Equation) Trace(key *string, log *[][3]string, values Values) {
+
+// ========================
+// TRACE LOG
+// ========================
+type TraceLog struct {
+	target string
+	log    [][3]string
+}
+
+func NewTracer(target string) TraceLog {
+	return TraceLog{target: target}
+}
+func (t *TraceLog) Log(e Equation, v Values) {
 	contains := false
 
 	for i, part := range e {
-		if part == *key {
+		if part == t.target {
 			e[i] = "X"
 			contains = true
 		} else if (i != 0) && (i != 2) {
-			e[i] = strconv.Itoa(values.Get(part))
+			e[i] = strconv.Itoa(v.Get(part))
 		}
 	}
 
 	if contains {
-		*key = e[0]
-		*log = append(*log, [3]string{e[1], e[2], e[3]})
+		t.target = e[0]
+		t.log = append(t.log, [3]string{e[1], e[2], e[3]})
 	}
 }
 
@@ -117,7 +128,6 @@ func FindHumanValue(log [][3]string) int {
 
 	for i := len(log) - 2; i >= 0; i-- {
 		equation := ReverseEquation(log[i])
-		fmt.Println(value, log[i], equation)
 		value = SolveForHuman(value, equation)
 	}
 
@@ -125,7 +135,6 @@ func FindHumanValue(log [][3]string) int {
 
 	return result
 }
-
 func ReverseEquation(e [3]string) [3]string {
 	switch e[1] {
 	case "+":
@@ -148,14 +157,12 @@ func ReverseEquation(e [3]string) [3]string {
 
 	return [3]string{e[0], e[1], e[2]}
 }
-
 func SolveForHuman(value string, equation [3]string) string {
 	for i, s := range equation {
 		if s == "X" {
 			equation[i] = value
 		}
 	}
-
 	a, _ := strconv.Atoi(equation[0])
 	b, _ := strconv.Atoi(equation[2])
 
@@ -171,5 +178,4 @@ func SolveForHuman(value string, equation [3]string) string {
 	default:
 		panic("Invalid operator")
 	}
-
 }

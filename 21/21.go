@@ -2,13 +2,13 @@ package day21
 
 func Solve(file string, part int) int {
 	values, equations := ParseInput(file)
-	target, log := "humn", [][3]string{}
+	tracer := NewTracer("humn")
 
 	for !equations.IsEmpty() {
 		equation := equations.Pop()
 
 		if value, solved := equation.Solve(values); solved {
-			equation.Trace(&target, &log, values)
+			tracer.Log(equation, values)
 			values.Add(equation[0], value)
 		} else {
 			equations.Push(equation)
@@ -16,7 +16,7 @@ func Solve(file string, part int) int {
 	}
 
 	if part == 2 {
-		return FindHumanValue(log)
+		return FindHumanValue(tracer.log)
 	}
 
 	return values.Get("root")
