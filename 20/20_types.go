@@ -146,23 +146,14 @@ func (l *List) ToArray() []int {
 
 	return output
 }
-
-// ========================
-// REFERENCE ARRAY
-// ========================
-type Reference []*Node
-
-// ========================
-// PARSER
-// ========================
-func GenerateList(file string) (*List, Reference) {
+func GenerateList(file string, key int) (*List, Reference) {
 	data := tools.ReadFile(file)
 	list := NewList()
 	ref := make(Reference, 0, len(data))
 
 	for line := range strings.SplitSeq(data, "\n") {
 		value, _ := strconv.Atoi(line)
-		node := NewNode(value)
+		node := NewNode(value * key)
 		ref = append(ref, node)
 		list.Add(node)
 	}
@@ -170,6 +161,14 @@ func GenerateList(file string) (*List, Reference) {
 	return list, ref
 }
 
+// ========================
+// REFERENCE ARRAY
+// ========================
+type Reference []*Node
+
+// ========================
+// HELPERS
+// ========================
 func IndexOf(arr []int, target int) int {
 	for i, n := range arr {
 		if n == target {
@@ -177,4 +176,20 @@ func IndexOf(arr []int, target int) int {
 		}
 	}
 	return -1
+}
+func GetModifiers(part int) (int, int) {
+	if part == 2 {
+		return 811589153, 10
+	}
+	return 1, 1
+}
+func GetGrooveCoordinate(list *List) (sum int) {
+	arr := list.ToArray()
+	offset := IndexOf(arr, 0)
+
+	for _, nth := range []int{1000, 2000, 3000} {
+		index := nth + offset
+		sum += arr[index%len(arr)]
+	}
+	return
 }
