@@ -1,14 +1,21 @@
 package day22
 
-func Solve(file string) int {
-	// grid, moves := ParseInput(file)
-	// state := NewState(grid.start)
+import "fmt"
 
-	// for i, move := range moves {
-	// 	state.UpdateState(move, grid, i)
-	// }
+func Solve(file string, part int) int {
+	grid, moves := ParseInput(file, part)
+	state := NewState(grid.start)
 
-	// return state.GetPassword()
+	// state.pos = Point{6, 6}
+	// state.bearing = 0
 
-	return 0
+	for i, move := range moves {
+		fmt.Println(move)
+		state.UpdateState(move, grid, i)
+	}
+
+	fmt.Println(state.GetPassword())
+
+	return -1
+
 }
