@@ -1,7 +1,6 @@
 package day22
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -16,96 +15,64 @@ type Point struct{ x, y int }
 // ========================
 // MOVE
 // ========================
-type Moves []int
+type Move struct {
+	amount int
+	isTurn bool
+}
 
-func NewMoveList(moveString string) Moves {
-	var moves Moves
-
+func NewMoveList(moveString string) []Move {
+	var moves []Move
 	for _, move := range tools.QuickMatch(moveString, `\d+|[RL]`) {
 		switch move {
 		case "R":
-			moves = append(moves, 90)
+			moves = append(moves, Move{90, true})
 		case "L":
-			moves = append(moves, -90)
+			moves = append(moves, Move{-90, true})
 		default:
 			n, _ := strconv.Atoi(move)
-			moves = append(moves, n)
+			moves = append(moves, Move{n, false})
 		}
 	}
-
 	return moves
 }
 
 // ========================
 // GRID
 // ========================
-type Target struct {
+type Wrap struct {
 	position Point
-	turn     int
+	bearing  int
 }
-
 type Grid struct {
-	wraps map[Target]Target
+	wraps map[Wrap]Wrap
 	walls map[Point]struct{}
 	start Point
 }
 
 func NewGrid() Grid {
 	return Grid{
-		wraps: make(map[Target]Target),
+		wraps: make(map[Wrap]Wrap),
 		walls: make(map[Point]struct{}),
 		start: Point{-1, -1},
 	}
 }
 
-func (g *Grid) AddWrap(from, to Point, facing, turn int) {
-	(*g).wraps[Target{from, facing}] = Target{to, turn}
+func (g *Grid) AddWrap(from, to Point, bearing, turn int) {
+	(*g).wraps[Wrap{from, bearing}] = Wrap{to, turn}
 }
-
-//	func (g *Grid) UpdateWraps(rows, cols map[int][2]int) {
-//		for y, x := range rows {
-//			// Left to Right
-//			(*g).wraps[Point{x[0] - 1, y}] = Point{x[1], y}
-//			// Right to Left
-//			(*g).wraps[Point{x[1] + 1, y}] = Point{x[0], y}
-//		}
-//		for x, y := range cols {
-//			// Top to Bottom
-//			(*g).wraps[Point{x, y[0] - 1}] = Point{x, y[1]}
-//			// Bottom to Top
-//			(*g).wraps[Point{x, y[1] + 1}] = Point{x, y[0]}
-//		}
-//	}
 func (g *Grid) AddWall(point Point) {
 	(*g).walls[point] = struct{}{}
 }
-
-//	func (g Grid) isWrap(point Point) Point {
-//		if newPoint, found := g.wraps[point]; found {
-//			return newPoint
-//		} else {
-//			return point
-//		}
-//	}
-//
-//	func (g Grid) isWall(point Point) bool {
-//		_, found := g.walls[point]
-//		return found
-//	}
-func (g *Grid) CheckPoint(next Target) (Target, bool) {
-	if _, isWall := g.walls[next.position]; isWall {
-		return Target{next.position, 0}, isWall
-	} else if target, isWrap := g.wraps[next]; isWrap {
-		fmt.Printf("From: %v\n To: %v\n", next, target)
-		if _, destIsWall := g.walls[target.position]; destIsWall {
-			return Target{next.position, 0}, destIsWall
-		}
-
-		// fmt.Printf("Wrap from x: %d, y: %d\nWrap to x: %d, y:%d\n", pos.x, pos.y, target.position.x, target.position.y)
-		return target, false
+func (g *Grid) IsWall(point Point) bool {
+	_, isWall := g.walls[point]
+	return isWall
+}
+func (g *Grid) IsWrap(wrapFrom Wrap) (Wrap, bool) {
+	if wrapTo, isWrap := g.wraps[wrapFrom]; isWrap {
+		return wrapTo, isWrap
+	} else {
+		return Wrap{}, isWrap
 	}
-
-	return Target{next.position, 0}, false
 }
 
 // ========================
@@ -119,34 +86,28 @@ type State struct {
 func NewState(start Point) State {
 	return State{pos: start, bearing: 90}
 }
-func (s *State) UpdateState(move int, grid Grid, index int) {
-	if index%2 == 0 {
-		s.UpdatePosition(move, grid)
+func (s *State) UpdateState(move Move, grid Grid) {
+	if move.isTurn {
+		s.Turn(move.amount)
 	} else {
-		s.Turn(move)
-	}
+		for i := 0; i < move.amount; i++ {
+			nextPosition := s.NextPosition()
 
-	if s.pos.x <= -2 || s.pos.x >= 152 || s.pos.y <= -2 || s.pos.y >= 202 {
-		fmt.Println(s.pos)
-		panic("OUT OF BOUNDS")
-	}
-
-}
-func (s *State) UpdatePosition(steps int, grid Grid) {
-	for i := 0; i < steps; i++ {
-		next := s.NextPosition(grid)
-
-		if target, isWall := grid.CheckPoint(Target{next, s.bearing}); isWall {
-			break
-		} else {
-			s.Turn(target.turn)
-			s.SetPosition(target.position)
+			if grid.IsWall(nextPosition) {
+				break
+			} else if wrapTo, isWrap := grid.IsWrap(Wrap{nextPosition, s.bearing}); isWrap {
+				if grid.IsWall(wrapTo.position) {
+					break
+				}
+				s.SetPosition(wrapTo.position)
+				s.Turn(wrapTo.bearing)
+			} else {
+				s.SetPosition(nextPosition)
+			}
 		}
 	}
-
-	// fmt.Printf("Currently at x:%d,y:%d, facing: %d\n", s.pos.x, s.pos.y, s.bearing)
 }
-func (s *State) NextPosition(grid Grid) Point {
+func (s *State) NextPosition() Point {
 	next := Point{(*s).pos.x, (*s).pos.y}
 
 	switch (*s).bearing {
@@ -167,6 +128,9 @@ func (s *State) NextPosition(grid Grid) Point {
 func (s *State) Turn(n int) {
 	(*s).bearing = (s.bearing + n + 360) % 360
 }
+func (s *State) SetPosition(point Point) {
+	(*s).pos = point
+}
 func (s *State) GetPassword() int {
 	row := s.pos.y
 	col := s.pos.x
@@ -182,83 +146,36 @@ func (s *State) GetPassword() int {
 	case 270:
 		dir = 2
 	}
-
 	return row*1000 + col*4 + dir
-}
-func (s *State) SetPosition(point Point) {
-	(*s).pos = point
 }
 
 // ========================
 // PARSER
 // ========================
-func ParseInput(file string, part int) (Grid, Moves) {
+func ParseInput(file string, part int) (Grid, []Move, State) {
 	data := tools.ReadFile(file)
 	sections := strings.Split(data, "\n\n")
-	lines := strings.Split(sections[0], "\n")
 
-	// rows := make(map[int][2]int)
-	// cols := make(map[int][2]int)
-
-	//Size depends on the net shape!!
-	// Input is 2 * 6
-	// Example is 3 * 4
-	size := len(lines) / 4
 	grid := NewGrid()
 
+	lines := strings.Split(sections[0], "\n")
 	for y, line := range lines {
 		for x, r := range line {
-
 			if grid.start.x == -1 && r == '.' {
 				grid.start = Point{x + 1, y + 1}
 			}
-
-			// if r == ' ' {
-			// 	continue
-			// }
-
 			if r == '#' {
 				grid.AddWall(Point{x + 1, y + 1})
 			}
-
-			// if limits, ok := rows[y]; ok {
-			// 	if x < limits[0] {
-			// 		limits[0] = x
-			// 	}
-			// 	if x > limits[1] {
-			// 		limits[1] = x
-			// 	}
-			// 	rows[y] = limits
-			// } else {
-			// 	rows[y] = [2]int{x, x}
-			// }
-
-			// if limits, ok := cols[x]; ok {
-			// 	if y < limits[0] {
-			// 		limits[0] = y
-			// 	}
-			// 	if y > limits[1] {
-			// 		limits[1] = y
-			// 	}
-			// 	cols[x] = limits
-			// } else {
-			// 	cols[x] = [2]int{y, y}
-			// }
 		}
 	}
 
-	fmt.Printf("size: %d, start: %v\n", size, grid.start)
-	// fmt.Println(grid.start)
-
-	// if file == "example.txt" {
-	// 	if part == 2 {
-	// 		generateExampleCubeMap(size, grid)
-	// 	}
-	// }
-
-	if file == "exampleB.txt" && part == 2 {
-		generateInputCubeMap(size, grid)
+	if part == 1 {
+		generate2DWrapMap(len(lines)/4, grid)
+	}
+	if part == 2 {
+		generate3DWrapMap(len(lines)/4, grid)
 	}
 
-	return grid, NewMoveList(sections[1])
+	return grid, NewMoveList(sections[1]), NewState(grid.start)
 }
