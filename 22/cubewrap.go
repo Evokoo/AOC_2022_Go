@@ -129,17 +129,17 @@ func generateExampleCubeMap(n int, grid Grid) {
 		// grid.AddWrap(Point{-1, n + i}, Point{4*n - i, 3 * n}, 270, 90)   // A Left edge -> F
 		// grid.AddWrap(Point{i, 2*n + 1}, Point{3*n - i, 3 * n}, 180, 180) // A Bottom edge -> E
 		// // B
-		// grid.AddWrap(Point{n + i, n}, Point{2*n + 1, i}, 0, 90)              // B Top edge -> C
+		grid.AddWrap(Point{n + i, n}, Point{2*n + 1, i}, 0, 90) // B Top edge -> C
 		// grid.AddWrap(Point{n + i, 2*n + 1}, Point{2 * n, 3*n - i}, 180, -90) // B Bottom edge -> E
 		// // // C
 		// // grid.AddWrap(Point{2*n + i, 0 - 1}, Point{n - i, n}, 0) // C Top edge -> A
 		// grid.AddWrap(Point{2 * n, i}, Point{n + i, n + 1}, 270, -90) // C Left edge -> B
 		// // grid.AddWrap(Point{3 * n, i}, Point{4 * n, 3*n - i}, 0) // C Right edge -> F
-		// // D
-		// grid.AddWrap(Point{3*n + 1, n + i}, Point{4*n + 1 - i, 2*n + 1}, 90, 90) // D Right edge -> F
+		// D
+		grid.AddWrap(Point{3*n + 1, n + i}, Point{4*n + 1 - i, 2*n + 1}, 90, 90) // D Right edge -> F
 		// // E
 		// grid.AddWrap(Point{2*n - 1, 2*n + i}, Point{2*n - i, 2 * n}, 270, 90)    // E Left edge -> B
-		// grid.AddWrap(Point{2*n + i, 3*n + 1}, Point{n + 1 - i, 2 * n}, 180, 180) // E Bottom edge -> A
+		grid.AddWrap(Point{2*n + i, 3*n + 1}, Point{n + 1 - i, 2 * n}, 180, 180) // E Bottom edge -> A
 		// // F
 		// grid.AddWrap(Point{3*n + i, 2 * n}, Point{3 * n, 2*n - i}, 0) // F Top edge -> D
 		// grid.AddWrap(Point{4 * n, 2*n + i}, Point{3 * n, n - i}, 0)   // F Right edge -> C
@@ -148,28 +148,27 @@ func generateExampleCubeMap(n int, grid Grid) {
 }
 
 func generateInputCubeMap(n int, grid Grid) {
-	// n += 1
 	for i := 1; i <= n; i++ {
 		// A
-		grid.AddWrap(Point{2*n + 1 + i, 0}, Point{2 * n, 4*n + 1 - i}, 0, -90) // A Top edge -> E
-		grid.AddWrap(Point{3*n + 1, i}, Point{2 * n, 3*n + 1 - i}, 90, 180)    // A Right edge -> D
-		grid.AddWrap(Point{2*n + 1 + i, n + 1}, Point{2 * n, n + i}, 180, 90)  // A Bottom edge -> C
+		grid.AddWrap(Point{2*n + i, 0}, Point{i, 4 * n}, 0, 0)              // A Top edge -> F
+		grid.AddWrap(Point{3*n + 1, i}, Point{2 * n, 3*n + 1 - i}, 90, 180) // A Right edge -> D
+		grid.AddWrap(Point{2*n + i, n + 1}, Point{2 * n, n + i}, 180, 90)   // A Bottom edge -> C
 		// B
-		grid.AddWrap(Point{n + 1 + i, 0}, Point{n + 1 + i, 4 * n}, 0, 0) // B Top edge -> E
-		grid.AddWrap(Point{n, i}, Point{n + 1 - i, 4 * n}, 270, 90)      // B Left edge -> F
+		grid.AddWrap(Point{n + i, 0}, Point{1, 3*n + i}, 0, 90)    // B Top edge -> F
+		grid.AddWrap(Point{n, i}, Point{1, 3*n + 1 - i}, 270, 180) // B Left edge -> E
 		// C
-		grid.AddWrap(Point{n, n + 1 + i}, Point{1, 4*n + 1 - i}, 270, 180)      // C Left edge -> F
-		grid.AddWrap(Point{2*n + 1, n + 1 + i}, Point{2*n + 1 + i, n}, 90, -90) // C Right edge -> A
+		grid.AddWrap(Point{n, n + i}, Point{i, 2*n + 1}, 270, -90)      // C Left edge -> E
+		grid.AddWrap(Point{2*n + 1, n + i}, Point{2*n + i, n}, 90, -90) // C Right edge -> A
 		// D
-		grid.AddWrap(Point{n, 2*n + 1 + i}, Point{i, 3*n + 1}, 270, -90)            // D Left edge -> F
-		grid.AddWrap(Point{2*n + 1, 2*n + 1 + i}, Point{3 * n, n + 1 - i}, 90, 180) // D Right edge -> A
+		grid.AddWrap(Point{n*2 + 1, 2*n + i}, Point{3 * n, n + 1 - i}, 90, 180) // D Right edge -> A
+		grid.AddWrap(Point{n + i, 3*n + 1}, Point{n, 3*n + i}, 180, 90)         // D Bottom edge -> F
 		// E
-		grid.AddWrap(Point{2*n + 1, 3*n + i}, Point{3*n + 1 - i, 1}, 90, 90) // E Right edge -> A
-		grid.AddWrap(Point{n + 1 + i, 4*n + 1}, Point{n + 1 + i, 1}, 180, 0) // E Bottom edge -> B
+		grid.AddWrap(Point{i, 2 * n}, Point{n + 1, n + i}, 0, 90)          // E Top edge -> C
+		grid.AddWrap(Point{0, 2*n + i}, Point{n + 1, n + 1 - i}, 270, 180) // E Left edge -> B
 		// F
-		grid.AddWrap(Point{i, 4*n + 1}, Point{n + 1, n + 1 - i}, 180, -90) // F Bottom edge -> B
-		grid.AddWrap(Point{0, 3 * n}, Point{n + 1, 2*n + 1 - i}, 270, 180) // F Left edge -> C
-		grid.AddWrap(Point{i, 3 * n}, Point{n + 1, 4*n + 1 - i}, 0, 90)    // F Top edge -> D
+		grid.AddWrap(Point{0, 3*n + i}, Point{n + i, 1}, 270, -90)        // F Left edge -> B
+		grid.AddWrap(Point{i, 4*n + 1}, Point{3*n + 1 - i, 1}, 180, 0)    // F Bottom edge -> A
+		grid.AddWrap(Point{n + 1, 3*n + i}, Point{n + i, 3 * n}, 90, -90) // F right edge -> D
 	}
 }
 
