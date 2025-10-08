@@ -59,22 +59,17 @@ type Point struct{ x, y int }
 func NewPoint(x, y int) *Point {
 	return &Point{x, y}
 }
-func (e *Point) Update(point Point) {
+func (e *Point) MoveTo(point Point) {
 	(*e).x = point.x
 	(*e).y = point.y
 }
-func (e *Point) WillMove(evles *Evles) bool {
+func (e *Point) CanMove(evles *Evles) bool {
 	for _, d := range Direction {
 		if evles.Has(Point{e.x + d.x, e.y + d.y}) {
 			return true
 		}
 	}
-
 	return false
-}
-func (e *Point) GetAdjacent(index int) Point {
-	d := Direction[index]
-	return Point{e.x + d.x, e.y + d.y}
 }
 func (e *Point) ProposeMove(elves *Evles, moves *MoveMap, round int) {
 	for i := 0; i < 4; i++ {
@@ -93,8 +88,8 @@ func (e *Point) ProposeMove(elves *Evles, moves *MoveMap, round int) {
 		}
 
 		if elves.CheckPoints(*e, check) {
-			// fmt.Println(dir)
-			moves.Update(e.GetAdjacent(dir), e)
+			d := Direction[dir]
+			moves.Update(Point{e.x + d.x, e.y + d.y}, e)
 			return
 		}
 	}
@@ -104,8 +99,11 @@ func (e *Point) ProposeMove(elves *Evles, moves *MoveMap, round int) {
 // ELVES
 // ========================
 type Evles struct {
-	list     []*Point
-	location map[Point]struct{}
+	list          []*Point
+	location      map[Point]struct{}
+	round         int
+	moves         int
+	endSimulation bool
 }
 
 func (e *Evles) Add(x, y int) {
@@ -117,12 +115,6 @@ func (e *Evles) Has(point Point) bool {
 	_, found := e.location[point]
 	return found
 }
-func (e *Evles) UpdateLocations() {
-	clear(e.location)
-	for _, elf := range (*e).list {
-		e.location[*elf] = struct{}{}
-	}
-}
 func (e *Evles) CheckPoints(origin Point, directions []int) bool {
 	for _, dir := range directions {
 		d := Direction[dir]
@@ -132,8 +124,7 @@ func (e *Evles) CheckPoints(origin Point, directions []int) bool {
 	}
 	return true
 }
-func (e *Evles) Print() int {
-	// Find bounds
+func (e *Evles) CalcuateFreeSpace() int {
 	minX, minY := math.MaxInt, math.MaxInt
 	maxX, maxY := math.MinInt, math.MinInt
 
@@ -152,35 +143,39 @@ func (e *Evles) Print() int {
 		}
 	}
 
-	// Add padding if you like
-	// padding := 0
-	// minX -= padding
-	// minY -= padding
-	// maxX += padding
-	// maxY += padding
+	return (maxY-minY+1)*(maxX-minX+1) - len(e.list)
+}
+func (e *Evles) StartRound(round int) {
+	moves := NewMoveMap()
+	for _, elf := range e.list {
+		if elf.CanMove(e) {
+			elf.ProposeMove(e, &moves, round)
+			e.moves++
+		}
+	}
+	for point, elves := range moves {
+		if len(elves) == 1 {
+			elves[0].MoveTo(point)
+		}
+	}
+}
+func (e *Evles) EndRound() {
+	clear(e.location)
+	for _, elf := range (*e).list {
+		e.location[*elf] = struct{}{}
+	}
 
-	// // Print grid row by row
-	// for y := minY; y <= maxY; y++ {
-	// 	for x := minX; x <= maxX; x++ {
-	// 		if e.Has(Point{x, y}) {
-	// 			fmt.Print("#")
-	// 		} else {
-	// 			fmt.Print(".")
-	// 		}
-	// 	}
-	// 	fmt.Println()
-	// }
+	if e.moves == 0 {
+		e.endSimulation = true
+	}
 
-	rows := maxY - minY + 1
-	cols := maxX - minX + 1
-
-	return rows*cols - len(e.list)
+	e.round++
+	e.moves = 0
 }
 
 // ========================
 // PARSER
 // ========================
-
 func ParseInput(file string) Evles {
 	data := tools.ReadFile(file)
 	elves := Evles{
